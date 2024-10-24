@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Private Chat</title>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <h1>Welcome, <%= user.username %>!</h1>
+    <a href="/auth/logout">Logout</a>
+
+    <h2>Available Users:</h2>
+    <ul id="user-list"></ul>
+
+    <div id="chat-box"></div>
+    <input type="text" id="recipient" placeholder="Recipient's username" />
+    <input type="text" id="message" placeholder="Type your message" />
+    <button onclick="sendMessage()">Send</button>
+
+    <script>
+        const socket = io();
+
+        function sendMessage() {
+            const sender = '<%= user.username %>';
+            const recipient = document.getElementById('recipient').value;
+            const content = document.getElementById('message').value;
+            
+            if (sender && recipient && content) {
+                socket.emit('sendMessage', { sender, recipient, content });
+                document.getElementById('message').value = '';
+            }
+        }
+
+        // Update user list
+        socket.on('updateUserList', (users) => {
+            const userList = document.getElementById('user-list');
+            userList.innerHTML = '';
+            users.forEach(user => {
+                userList.innerHTML += `<li>${user}</li>`;
+            });
+        });
+
+        // Receive messages
+        socket.on('receiveMessage', (message) => {
+            const chatBox = document.getElementById('chat-box');
+            chatBox.innerHTML += `<p><strong>${message.sender}:</strong> ${message.content}</p>`;
+        });
+    </script>
+</body>
+</html>
