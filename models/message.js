@@ -1,11 +1,11 @@
 const mongoose = require('mongoose');
 
-const MessageSchema = new mongoose.Schema({
-    sender: String,
-    recipient: String, // If it's a group chat, set as "group"
-    content: String,
-    timestamp: { type: Date, default: Date.now },
-    chatType: { type: String, enum: ['one-to-one', 'group'], default: 'one-to-one' }
-});
+const messageSchema = new mongoose.Schema({
+    sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    recipient: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // null for group messages
+    groupId: { type: mongoose.Schema.Types.ObjectId, ref: 'Group' }, // used for group chats
+    content: { type: String, required: true },
+    chatType: { type: String, enum: ['one-to-one', 'group'], required: true }
+}, { timestamps: true });
 
-module.exports = mongoose.model('Message', MessageSchema);
+module.exports = mongoose.model('Message', messageSchema);

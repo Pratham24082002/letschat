@@ -1,21 +1,10 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
 
-const UserSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema({
     username: { type: String, unique: true, required: true },
-    password: { type: String, required: true }
-});
+    password: { type: String, required: true },
+    profilePicture: { type: String, default: '' }, // URL to the profile picture
+    status: { type: String, default: 'Hey there! I am using Chat App.' }
+}, { timestamps: true });
 
-// Hash password before saving the user model
-UserSchema.pre('save', async function (next) {
-    if (!this.isModified('password')) return next();
-    this.password = await bcrypt.hash(this.password, 10);
-    next();
-});
-
-// Method to compare password
-UserSchema.methods.comparePassword = function (candidatePassword) {
-    return bcrypt.compare(candidatePassword, this.password);
-};
-
-module.exports = mongoose.model('User', UserSchema);
+module.exports = mongoose.model('User', userSchema);

@@ -1,0 +1,52 @@
+<!-- groupChat.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group Chat - <%= groupName %></title>
+    <script src="/socket.io/socket.io.js"></script>
+    <link rel="stylesheet" href="/styles/chat.css">
+</head>
+<body>
+    <h1>Group Chat: <%= groupName %></h1>
+    <a href="/chat">Back to Chat List</a>
+
+    <div id="chat-box"></div>
+    <textarea id="message" placeholder="Type your message"></textarea>
+    <button onclick="sendMessage()">Send</button>
+
+    <script>
+        const socket = io();
+        const sender = '<%= user._id %>';
+        const groupId = '<%= groupId %>';
+
+        // Function to send a group message
+        function sendMessage() {
+            const content = document.getElementById('message').value;
+            if (content) {
+                socket.emit('sendGroupMessage', { sender, groupId, content });
+                document.getElementById('message').value = '';
+            }
+        }
+
+        // Listen for incoming group messages
+        socket.on('receiveMessage', (message) => {
+            if (message.groupId === groupId) {
+                const chatBox = document.getElementById('chat-box');
+                chatBox.innerHTML += `<p><strong>${message.sender === sender ? 'You' : message.sender}:</strong> ${message.content}</p>`;
+            }
+        });
+
+        // Load existing group messages
+        window.onload = async () => {
+            const response = await fetch(`/messages/group/${groupId}`);
+            const messages = await response.json();
+            const chatBox = document.getElementById('chat-box');
+            messages.forEach(message => {
+                chatBox.innerHTML += `<p><strong>${message.sender === sender ? 'You' : message.sender}:</strong> ${message.content}</p>`;
+            });
+        };
+    </script>
+</body>
+</html>

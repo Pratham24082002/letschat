@@ -3,49 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Private Chat</title>
+    <title>Chat List</title>
     <script src="/socket.io/socket.io.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/flowbite@1.6.5/dist/flowbite.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/styles/chat.css">
+    <style>
+        body {
+            display: flex;
+        }
+        .sidebar {
+            width: 250px;
+            background-color: #f9fafb;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+        .content {
+            flex-grow: 1;
+            padding: 20px;
+        }
+        .user-card, .group-card {
+            background: white;
+            border: 1px solid #e5e7eb; /* Tailwind's gray-300 */
+            border-radius: 0.375rem; /* Tailwind's rounded-md */
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: transform 0.2s;
+        }
+        .user-card:hover, .group-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        a {
+            color: #3b82f6; /* Tailwind's blue-600 */
+        }
+        input {
+            margin-bottom: 15px;
+        }
+    </style>
 </head>
-<body>
-    <h1>Welcome, <%= user.username %>!</h1>
-    <a href="/auth/logout">Logout</a>
+<body class="bg-gray-100">
+    <div class="sidebar">
+        <h2 class="text-xl font-semibold mb-4">Navigation</h2>
+        <a href="/chat" class="text-blue-600">User Chats</a>
+        <a href="/group" class="text-blue-600">Group Chats</a>
+        <a href="/profile" class="text-blue-600">Profile</a>
+        <a href="/auth/logout" class="text-blue-600">Logout</a>
+    </div>
 
-    <h2>Available Users:</h2>
-    <ul id="user-list"></ul>
+    <div class="content">
+        <h1 class="text-3xl font-bold mb-4">Welcome, <%= user.username %>!</h1>
 
-    <div id="chat-box"></div>
-    <input type="text" id="recipient" placeholder="Recipient's username" />
-    <input type="text" id="message" placeholder="Type your message" />
-    <button onclick="sendMessage()">Send</button>
+        <h2 class="text-2xl font-semibold mt-6">Search Users:</h2>
+        <input id="user-search" type="text" placeholder="Search for users..." class="mb-4 p-2 border rounded w-full"/>
+
+        <h2 class="text-2xl font-semibold mt-6">Available Users:</h2>
+        <div id="user-list" class="grid grid-cols-1 gap-4">
+            <!-- User cards will be injected here -->
+        </div>
+
+        <h2 class="text-2xl font-semibold mt-6">Search Groups:</h2>
+        <input id="group-search" type="text" placeholder="Search for groups..." class="mb-4 p-2 border rounded w-full"/>
+
+        <h2 class="text-2xl font-semibold mt-6">Available Groups:</h2>
+        <div id="group-list" class="grid grid-cols-1 gap-4">
+            <!-- Group cards will be injected here -->
+        </div>
+
+        <div id="chat-box" class="my-4"></div>
+
+        <div class="mt-4">
+            <a href="/group/create" class="text-blue-600 underline">Create Group</a> | 
+            <a href="/group/addUser" class="text-blue-600 underline">Add User to Group</a>
+        </div>
+    </div>
 
     <script>
         const socket = io();
 
-        function sendMessage() {
-            const sender = '<%= user.username %>';
-            const recipient = document.getElementById('recipient').value;
-            const content = document.getElementById('message').value;
-            
-            if (sender && recipient && content) {
-                socket.emit('sendMessage', { sender, recipient, content });
-                document.getElementById('message').value = '';
-            }
-        }
+        // Update the user list every 5 seconds
+        setInterval(() => {
+            socket.emit('requestUserList');
+        }, 5000);
 
-        // Update user list
+        // Receive the updated user list from the server
         socket.on('updateUserList', (users) => {
             const userList = document.getElementById('user-list');
             userList.innerHTML = '';
             users.forEach(user => {
-                userList.innerHTML += `<li>${user}</li>`;
+                // Omit the logged-in user's name from the list
+                if (user !== '<%= user.username %>') {
+                    userList.innerHTML += `
+                        <div class="user-card">
+                            <h3 class="font-bold text-lg">${user}</h3>
+                            <a href="/chat/user/${user}" class="text-blue-600 underline">Start Chat</a>
+                        </div>
+                    `;
+                }
             });
         });
 
-        // Receive messages
-        socket.on('receiveMessage', (message) => {
-            const chatBox = document.getElementById('chat-box');
-            chatBox.innerHTML += `<p><strong>${message.sender}:</strong> ${message.content}</p>`;
+        // Load available groups
+        window.onload = async () => {
+            const response = await fetch('/groups');
+            const groups = await response.json();
+            const groupList = document.getElementById('group-list');
+            groupList.innerHTML = '';
+            groups.forEach(group => {
+                groupList.innerHTML += `
+                    <div class="group-card">
+                        <h3 class="font-bold text-lg">${group.name}</h3>
+                        <a href="/chat/group/${group._id}" class="text-blue-600 underline">Join Group</a>
+                    </div>
+                `;
+            });
+        };
+
+        // Search Users
+        document.getElementById('user-search').addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            const userList = document.getElementById('user-list');
+            const users = userList.getElementsByClassName('user-card');
+
+            Array.from(users).forEach(user => {
+                const username = user.getElementsByTagName('h3')[0].innerText.toLowerCase();
+                user.style.display = username.includes(query) ? 'block' : 'none';
+            });
         });
+
+        // Search Groups
+        document.getElementById('group-search').addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            const groupList = document.getElementById('group-list');
+            const groups = groupList.getElementsByClassName('group-card');
+
+            Array.from(groups).forEach(group => {
+                const groupName = group.getElementsByTagName('h3')[0].innerText.toLowerCase();
+                group.style.display = groupName.includes(query) ? 'block' : 'none';
+            });
+        });
+
+        // Receive notification when a user joins
+        socket.on('userJoined', ({ username }) => {
+            const chatBox = document.getElementById('chat-box');
+            chatBox.innerHTML += `<p><em>${username} has joined the chat.</em></p>`;
+        });
+
+        // Request the user list immediately after connecting
+        socket.emit('requestUserList');
     </script>
 </body>
 </html>

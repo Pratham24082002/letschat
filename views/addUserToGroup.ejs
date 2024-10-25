@@ -1,0 +1,31 @@
+<!-- addUserToGroup.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add User to Group</title>
+    <link rel="stylesheet" href="/styles/profile.css">
+</head>
+<body>
+    <h1>Add User to Group</h1>
+    <form action="/group/addUser" method="POST">
+        <label for="groupId">Select Group:</label>
+        <select id="groupId" name="groupId" required>
+            <% groups.forEach(group => { %>
+                <option value="<%= group._id %>"><%= group.name %></option>
+            <% }) %>
+        </select>
+        <br>
+        <label for="userId">Select User:</label>
+        <select id="userId" name="userId" required>
+            <% users.forEach(user => { %>
+                <option value="<%= user._id %>"><%= user.username %></option>
+            <% }) %>
+        </select>
+        <br>
+        <button type="submit">Add User to Group</button>
+    </form>
+    <a href="/chat">Back to Chat</a>
+</body>
+</html>

@@ -1,0 +1,20 @@
+<!-- createGroup.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Group</title>
+    <link rel="stylesheet" href="/styles/profile.css">
+</head>
+<body>
+    <h1>Create a New Group</h1>
+    <form action="/group/create" method="POST">
+        <label for="name">Group Name:</label>
+        <input type="text" id="name" name="name" required>
+        <br>
+        <button type="submit">Create Group</button>
+    </form>
+    <a href="/chat">Back to Chat</a>
+</body>
+</html>
